@@ -1,7 +1,10 @@
-import preInterviewTasks from '../../src/pre-interview-tasks.js';
+import {BowlingGame, BowlingGameConstants} from '../../src/pre-interview-tasks.js';
 
-describe('preInterviewTasks', () => {
-  it('should be runing without any problems', () => {
-    expect(preInterviewTasks).to.not.throw();
+describe('BowlingGame', () => {
+  let game = BowlingGame()
+
+  it('should exist', () => {
+    expect(game).to.exist;
   });
+
 });
