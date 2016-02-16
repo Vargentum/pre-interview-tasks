@@ -1,13 +1,22 @@
 import {BowlingGame, BowlingGameConstants} from '../../src/pre-interview-tasks.js';
 const {ROLLS_IN_FRAME, BOWLS_IN_FRAME, FRAMES_IN_MATCH, FRAME_TYPES} = BowlingGameConstants
 
-let customGame = (level, x = 0, y = x || 0) => {
+let customGame = (level, x = 0, y = 0) => {
   let game = BowlingGame()
   for (let i = 0; i < level; i++) {
     game.roll(x, y)
   };
   return game
 }
+
+let customStrikeGame = level => {
+  let game = BowlingGame()
+  for (let i = 0; i < level; i++) {
+    game.roll(BOWLS_IN_FRAME)
+  };
+  return game
+}
+
 
 
 
@@ -94,12 +103,9 @@ describe('BowlingGame', () => {
       expect(BowlingGame().roll(4,6).roll(3,5).score()).to.be.equal(4 + 6 + 3 * 2 + 5);
     });
 
-    // it(`should provide additional roll in last round`, () => {
-    //   game.reset()
-    //   game = customGame(FRAMES_IN_MATCH - 1)
-    //   expect(game.roll(5,5)).roll(5).to.not.throw;
-    // });
-
+    it(`should provide additional roll in last round`, () => {
+      expect(customGame(FRAMES_IN_MATCH).roll(5,5,5)).to.not.throw;
+    });
 
   })
 
@@ -114,30 +120,34 @@ describe('BowlingGame', () => {
       expect(BowlingGame().roll(BOWLS_IN_FRAME).roll(3,5).score()).to.be.equal(10 + (3 + 5) * 2);
     });
 
-    // it(`should provide 2 additional rolls in last round`, () => {
-    //   game.reset()
-    //   game = customGame(FRAMES_IN_MATCH - 1)
-    //   expect(game.roll(BOWLS_IN_FRAME)).roll(0,0).to.not.throw;
-    // });
+    it(`should allow 2 additional rolls in last round`, () => {
+      expect(customGame(FRAMES_IN_MATCH).roll(BOWLS_IN_FRAME, 0, 0)).to.not.throw;
+    });
 
-    // it(`should reach max score 300 if only strikes appears`, () => {
-    //   game = customGame(FRAMES_IN_MATCH + 2, BOWLS_IN_FRAME)
-    //   expect(game.score()).to.be.equal(300);
-    // });
+    it(`should reach max score 300 if only strikes appears`, () => {
+      expect(customStrikeGame(FRAMES_IN_MATCH).roll(BOWLS_IN_FRAME, BOWLS_IN_FRAME, BOWLS_IN_FRAME).score())
+        .to.be.equal(300);
+    });
 
   })
 
 
   describe('last frame', () => {
-    let lastRoundGame = customGame(FRAMES_IN_MATCH - 1)
-
     it(`should contain flag isLast`, () => {
-      expect(lastRoundGame.frameInfo().isLast).to.be.true;
+      expect(customGame(FRAMES_IN_MATCH).frameInfo().isLast).to.be.true;
     });
 
-    it(`should contain flag isLast`, () => {
-      expect(lastRoundGame.frameInfo().isLast).to.be.true;
+    it(`should simply sum all rolls`, () => {
+      expect(customGame(FRAMES_IN_MATCH).roll(1,2).score()).to.be.equal(3);
+      expect(customGame(FRAMES_IN_MATCH).roll(5,5,5).score()).to.be.equal(15);
+      expect(customGame(FRAMES_IN_MATCH).roll(10,10,10).score()).to.be.equal(30);
     });
+
+    it(`should ignore spare or strike multipliers`, () => {
+      expect(customGame(FRAMES_IN_MATCH - 1).roll(5,5).roll(1,2).score()).to.be.equal(13);
+      expect(customGame(FRAMES_IN_MATCH - 1).roll(5,5).roll(5,5,5).score()).to.be.equal(25);
+      expect(customGame(FRAMES_IN_MATCH - 1).roll(10).roll(10,10,10).score()).to.be.equal(40);
+    })
   })
 
 });

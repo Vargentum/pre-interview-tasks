@@ -14,6 +14,7 @@
 
 
 const BowlingGameConstants = {
+  STRIKE_MAX_MULTIPLIER: 2,
   ROLLS_IN_FRAME: 2,
   BOWLS_IN_FRAME: 10,
   FRAMES_IN_MATCH: 10,
@@ -26,10 +27,12 @@ const BowlingGameConstants = {
 
 
 function BowlingGame () {
-  const {ROLLS_IN_FRAME, BOWLS_IN_FRAME, FRAMES_IN_MATCH, FRAME_TYPES} = BowlingGameConstants
+  const {STRIKE_MAX_MULTIPLIER, ROLLS_IN_FRAME, BOWLS_IN_FRAME, FRAMES_IN_MATCH, FRAME_TYPES} = BowlingGameConstants
   const GameErrors = {
-    ROLL_AFTER_STRIKE: SyntaxError("You can't roll after strike"),
-    TO_MUCH_ROLLS: SyntaxError(`Too much rolls. Provide ${ROLLS_IN_FRAME} rolls or ${ROLLS_IN_FRAME + 1} if round is last.`)
+    ROLL_AFTER_STRIKE:  new SyntaxError("You can't roll after strike"),
+    TO_MUCH_ROLLS:      new SyntaxError(`Too much rolls. Provide ${ROLLS_IN_FRAME} rolls or ${ROLLS_IN_FRAME + 1} if round is last.`),
+    INVALID_ROLL_TYPE:  new TypeError(`Invalid roll type. Must be a non-float number.`),
+    INVALID_ROLL_VALUE: new TypeError(`Invalid roll value. Must be from 0 to ${BOWLS_IN_FRAME}.`), 
   }
   const defaultState = {
     score: 0,
@@ -47,26 +50,45 @@ function BowlingGame () {
   let privateState = Object.create(defaultPrivateState)
 
   let sum = nums => nums.reduce((p, n) => p += n, 0)
-  let validateRoll = (...rolls) => {
-    let {isLast} = state.frameinfo
-    if (rolls[0] === BOWLS_IN_FRAME && rolls.length > 1) {
-      throw new GameErrors.ROLL_AFTER_STRIKE
+  
+  let validateRoll = (rolls) => {
+    let {isLast} = state.frameInfo
+    let {length} = rolls
+    let isntValidType = num => !(num === 0 || typeof num === 'number' && num % Math.floor(num) === 0)
+    let isntValidVal = num => !(num >= 0 && num <= BOWLS_IN_FRAME)
+
+    if ((rolls[0] === BOWLS_IN_FRAME && length > 1 && !isLast) || (rolls[0] === BOWLS_IN_FRAME && length > 3 && isLast)) {
+      throw GameErrors.ROLL_AFTER_STRIKE
     }
-    else if ((rolls.length > ROLLS_IN_FRAME && !isLast) || (rolls.length > ROLLS_IN_FRAME + 1 && isLast)) {
-      throw new GameErrors.TO_MUCH_ROLLS
+    else if ((length > ROLLS_IN_FRAME && !isLast) || (length > ROLLS_IN_FRAME + 1 && isLast)) {
+      throw GameErrors.TO_MUCH_ROLLS
+    }
+    else if (rolls.some(isntValidType)) {
+      throw GameErrors.INVALID_ROLL_TYPE
+    }
+    else if (rolls.some(isntValidVal)) {
+      throw GameErrors.INVALID_ROLL_VALUE
     }
   }
+
   let updateScore = ({score, frameInfo}, rolls) => {
-    let {status} = frameInfo
+    let {status, isLast} = frameInfo
     let {strike, spare, common} = FRAME_TYPES
+    let reduceStrikeMultiplier = () => privateState.strikeMultiplier <= 0 ? 0 : --privateState.strikeMultiplier
     switch (true) {
-      case status === strike || privateState.strikeMultiplier: //! 
-        score += sum(rolls) * 2
-        privateState.strikeMultiplier--
+      case status === strike || privateState.strikeMultiplier && !isLast:
+        debugger
+        score += sum(rolls) * (2 + privateState.strikeMultiplier)
       break
-      case status === spare:  score += sum(rolls) + rolls[0]
+      case status === spare && !isLast:
+        score += sum(rolls) + rolls[0]
+        reduceStrikeMultiplier()
       break
-      case status === common: score += sum(rolls)
+      case status === common && !isLast:
+        score += sum(rolls)
+        reduceStrikeMultiplier()
+      case isLast === true:
+        score += sum(rolls)
       break
     }
     return {score}
@@ -81,7 +103,10 @@ function BowlingGame () {
     switch (true) {
       case rolls[0] === BOWLS_IN_FRAME:
         status = strike
-        privateState.strikeMultiplier++  
+        if (privateState.strikeMultiplier < STRIKE_MAX_MULTIPLIER ) {
+          privateState.strikeMultiplier++ 
+        }
+        debugger
         break;
       case sum(rolls) === BOWLS_IN_FRAME:
         status = spare
