@@ -3,9 +3,9 @@ const {ROLLS_IN_FRAME, BOWLS_IN_FRAME, FRAMES_IN_MATCH, FRAME_TYPES} = BowlingGa
 
 let customGame = (level, x = 0, y = x || 0) => {
   let game = BowlingGame()
-  for (let i = FRAMES_IN_MATCH - level; i >= 0; i--) {
+  for (let i = 0; i < level; i++) {
     game.roll(x, y)
-  }
+  };
   return game
 }
 
@@ -84,72 +84,60 @@ describe('BowlingGame', () => {
   })
 
 
-  // describe('spare roll', () => {
+  describe('spare roll', () => {
 
-  //   it('should switch frame status to "spare"', () => {
-  //     game.reset()
-  //     expect(game.roll(4,6).frameInfo().status).to.be.equal('spare');
-  //   });
+    it(`should switch frame status to ${FRAME_TYPES.common}`, () => {
+      expect(BowlingGame().roll(4,6).frameInfo().status).to.be.equal(FRAME_TYPES.spare);
+    });
 
-  //   it('should sum score of two rolls and next roll, if all bowls striked down after 2 frame roll', () => {
-  //     game.reset()
-  //     expect(game.roll(4,6).roll(3,5).score()).to.be.equal(4 + 6 + 3 * 2 + 5);
-  //   });
+    it('should sum score of two rolls and next roll, if all bowls striked down after 2 frame roll', () => {
+      expect(BowlingGame().roll(4,6).roll(3,5).score()).to.be.equal(4 + 6 + 3 * 2 + 5);
+    });
 
-  //   it(`should provide additional roll in last round`, () => {
-  //     game.reset()
-  //     game = customGame(FRAMES_IN_MATCH - 1)
-  //     expect(game.roll(5,5)).roll(5).to.not.throw;
-  //   });
-
-  //   it(`should reach max score 300 if only strikes appears`, () => {
-  //     game.reset()
-  //     game = customGame(FRAMES_IN_MATCH + 2, BOWLS_IN_FRAME)
-  //     expect(game.score()).to.be.equal(300);
-  //   });
+    // it(`should provide additional roll in last round`, () => {
+    //   game.reset()
+    //   game = customGame(FRAMES_IN_MATCH - 1)
+    //   expect(game.roll(5,5)).roll(5).to.not.throw;
+    // });
 
 
-  // })
+  })
 
 
-  // describe('strike roll', () => {
-  //   game.reset()
+  describe('strike roll', () => {
 
-  //   it('should switch frame status to "strike"', () => {
-  //     expect(game.roll(4,6).frameInfo().status).to.be.equal('strike');
-  //   });
+    it(`should switch frame status to ${FRAME_TYPES.strike}`, () => {
+      expect(BowlingGame().roll(BOWLS_IN_FRAME).frameInfo().status).to.be.equal(FRAME_TYPES.strike);
+    });
 
-  //   it('should sum score of the roll and next 2 rolls if all bowls striked down after 1 frame roll', () => {
-  //     expect(game.roll(BOWLS_IN_FRAME).roll(3,5).score()).to.be.equal(10 + (3 + 5) * 2);
-  //   });
+    it('should sum score of the roll and next 2 rolls if all bowls striked down after 1 frame roll', () => {
+      expect(BowlingGame().roll(BOWLS_IN_FRAME).roll(3,5).score()).to.be.equal(10 + (3 + 5) * 2);
+    });
 
-  //   it(`should provide additional frame in last round`, () => {
-  //     game.reset()
-  //     game = customGame(FRAMES_IN_MATCH - 1)
-  //     expect(game.roll(BOWLS_IN_FRAME)).roll(0,0).to.not.throw;
-  //   });
+    // it(`should provide 2 additional rolls in last round`, () => {
+    //   game.reset()
+    //   game = customGame(FRAMES_IN_MATCH - 1)
+    //   expect(game.roll(BOWLS_IN_FRAME)).roll(0,0).to.not.throw;
+    // });
 
-  //   it(`should reach max score 300 if only strikes appears`, () => {
-  //     game = customGame(FRAMES_IN_MATCH + 2, BOWLS_IN_FRAME)
-  //     expect(game.score()).to.be.equal(300);
-  //   });
+    // it(`should reach max score 300 if only strikes appears`, () => {
+    //   game = customGame(FRAMES_IN_MATCH + 2, BOWLS_IN_FRAME)
+    //   expect(game.score()).to.be.equal(300);
+    // });
 
-  // })
+  })
 
 
-  // describe('last frame', () => {
-  //   game.reset()
+  describe('last frame', () => {
+    let lastRoundGame = customGame(FRAMES_IN_MATCH - 1)
 
-  //   it(`shouldn't contain flag isLast`, () => {
-  //     expect(game.frameInfo().isLast).to.be.not.true;
-  //   });
+    it(`should contain flag isLast`, () => {
+      expect(lastRoundGame.frameInfo().isLast).to.be.true;
+    });
 
-  //   game = customGame(FRAMES_IN_MATCH)
-
-  //   it(`should contain flag isLast`, () => {
-  //     expect(game.frameInfo().isLast).to.be.true;
-  //   });
-
-  // })
+    it(`should contain flag isLast`, () => {
+      expect(lastRoundGame.frameInfo().isLast).to.be.true;
+    });
+  })
 
 });
