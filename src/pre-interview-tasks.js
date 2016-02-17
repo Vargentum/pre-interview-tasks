@@ -21,7 +21,8 @@ const BowlingGameConstants = {
   FRAME_TYPES: {
     strike: 'strike',
     spare:  'spare',
-    common: 'common'
+    common: 'common',
+    last: 'last'
   }
 }
 
@@ -34,22 +35,101 @@ function BowlingGame () {
     INVALID_ROLL_TYPE:  new TypeError(`Invalid roll type. Must be a non-float number.`),
     INVALID_ROLL_VALUE: new TypeError(`Invalid roll value. Must be from 0 to ${BOWLS_IN_FRAME}.`), 
   }
-  const defaultState = {
-    score: 0,
-    frameInfo: {
-      number: 0,
-      status: FRAME_TYPES.common,
-      isLast: false
-    }
+  const gameHistory = {
+    rolls:   [],
+    statuses:[],
+    scores:  [],
+    total:   []
   }
-  const defaultPrivateState = {
-    strikeMultiplier: 0,
-    validRoll: null
-  }
-  let state = Object.create(defaultState)
-  let privateState = Object.create(defaultPrivateState)
 
-  let sum = nums => nums.reduce((p, n) => p += n, 0)
+  const gameCalculator = (function() {
+    let {rolls, statuses, scores, total} = gameHistory
+       ,getScore = () => scores.reduce((p, n) => p += n, 0)
+       ,instance = null
+       ,createInstance = () => {
+         if (!instance) instance = {getScore}
+         return instance
+       }
+
+    return createInstance()
+  }())
+
+  const gameLogger = (function() {
+    let {rolls, statuses, scores, total} = gameHistory
+       ,getMultiplierFrom = (index) => {
+          return statuses
+            .filter((item, idx, log) => index - idx <= STRIKE_MAX_MULTIPLIER)
+            .reduce((mlt, {status}) => {
+              let {strike, spare, common, last} = FRAME_TYPES
+              switch (status) {
+                case strike: mlt += 2
+                case spare:  mlt += 1
+                case common: mlt -= 1
+                case last:   mlt = 0
+                default:     mlt = 0
+                return mlt
+              }
+            }, 0)
+          }
+       ,{strike, spare, common, last} = FRAME_TYPES
+       ,logRolls = rls => {
+          rolls.push(rls)
+          return rls
+        }
+       ,logStatus = rls => {
+          let status;
+          switch (true) {
+            case rls[0] === BOWLS_IN_FRAME:
+              status = strike
+              break
+            case rls[0] + rls[1] === BOWLS_IN_FRAME:
+              status = spare
+              break
+            case rls[0] + rls[1] < BOWLS_IN_FRAME:
+              status = common
+              break
+            case rls[2]:
+              status = last
+              break
+          }
+          statuses.push(status)
+          return status
+        }
+       ,logScore = rls => {
+          rolls.reduce((total, rls, idx) => {
+            let multiplier = getMultiplierFrom(idx)
+            return total += rls.reduce((rollTotal, roll) => {
+              if (multiplier) {
+                return rollTotal += roll * 2
+                multiplier--
+              }
+              else {
+                return rollTotal += roll
+              }
+            }, 0)
+          }, 0)
+        }
+       ,log = rls => {
+          total.push({
+            rolls: logRolls(rls),
+            score: logScore(rls),
+            status: logStatus(rls)
+          })
+        }
+       ,reset = () => {
+          rolls =  []
+          status = []
+          game =   []
+          total =  []
+        }
+       ,instance = null
+       ,createInstance = () => {
+         if (!instance) instance = {log, reset}
+         return instance
+       }
+
+    return createInstance()
+  }())
   
   let validateRoll = (rolls) => {
     let {isLast} = state.frameInfo
@@ -74,23 +154,8 @@ function BowlingGame () {
   let updateScore = ({score, frameInfo}, rolls) => {
     let {status, isLast} = frameInfo
     let {strike, spare, common} = FRAME_TYPES
-    let reduceStrikeMultiplier = () => privateState.strikeMultiplier <= 0 ? 0 : --privateState.strikeMultiplier
-    switch (true) {
-      case status === strike || privateState.strikeMultiplier && !isLast:
-        debugger
-        score += sum(rolls) * (2 + privateState.strikeMultiplier)
-      break
-      case status === spare && !isLast:
-        score += sum(rolls) + rolls[0]
-        reduceStrikeMultiplier()
-      break
-      case status === common && !isLast:
-        score += sum(rolls)
-        reduceStrikeMultiplier()
-      case isLast === true:
-        score += sum(rolls)
-      break
-    }
+    gameLogger.log(status)
+    score += countScore(rolls, gameLogger.currentMultiplier())
     return {score}
   }
   let updateFrameNumber = ({number, isLast}) => {
@@ -103,10 +168,6 @@ function BowlingGame () {
     switch (true) {
       case rolls[0] === BOWLS_IN_FRAME:
         status = strike
-        if (privateState.strikeMultiplier < STRIKE_MAX_MULTIPLIER ) {
-          privateState.strikeMultiplier++ 
-        }
-        debugger
         break;
       case sum(rolls) === BOWLS_IN_FRAME:
         status = spare
@@ -115,33 +176,22 @@ function BowlingGame () {
         status = common
         break;
     }
-    return {status}
+    gameLogger.log(status)
   }
 
+  
   let publicMethods = {
     roll(...rolls) {
-      validateRoll(rolls)
-      let frameInfo = Object.assign(
-        {},
-        updateFrameNumber(state.frameInfo, rolls),
-        updateFrameStatus(state.frameInfo, rolls)
-      )
-      state = Object.assign(
-        state,
-        updateScore(state, rolls),
-        {frameInfo}
-      )
+      // validateRoll(rolls)
+      gameLogger.log(rolls)
       return this
     },
     reset() {
-      state = Object.assign({}, defaultState)
+      gameLogger.reset()
       return this
     },
     score() {
-      return state.score
-    },
-    frameInfo() {
-      return state.frameInfo
+      return gameCalculator.getScore()
     }
   }
 

@@ -27,28 +27,11 @@ describe('BowlingGame', () => {
     expect(game).to.exist;
   });
 
-
   describe('reset', () => {
-
     it('should reset score to 0', () => {
       expect(BowlingGame().score()).to.be.equal(0);
     });
-
-    let {number, status, isLast} = BowlingGame().frameInfo()
-
-    it('should reset frameInfo().number to 0', () => {
-      expect(number).to.be.equal(0);
-    });
-
-    it(`should reset frameInfo().status to be ${FRAME_TYPES.common}`, () => {
-      expect(status).to.be.equal(FRAME_TYPES.common);
-    });
-
-    it('should reset frameInfo().isLast to false', () => {
-      expect(isLast).to.be.false;
-    });
   }) 
-
 
 
   // describe('incorrect params', () => {
@@ -76,15 +59,6 @@ describe('BowlingGame', () => {
 
 
   describe('common roll', () => {
-
-    it(`should switch frame status to ${FRAME_TYPES.common}`, () => {
-      expect(BowlingGame().roll(3,2).frameInfo().status).to.be.equal(FRAME_TYPES.common);
-    });
-
-    it(`should switch frame number to 1`, () => {
-      expect(BowlingGame().roll(3,2).frameInfo().number).to.be.equal(1);
-    });
-    
     it('should sum score of two rolls', () => {
       expect(BowlingGame().roll(4,5).score()).to.be.equal(4 + 5);
       expect(BowlingGame().roll(1,2).roll(3,4).score()).to.be.equal(1 + 2 + 3 + 4);
@@ -94,11 +68,6 @@ describe('BowlingGame', () => {
 
 
   describe('spare roll', () => {
-
-    it(`should switch frame status to ${FRAME_TYPES.common}`, () => {
-      expect(BowlingGame().roll(4,6).frameInfo().status).to.be.equal(FRAME_TYPES.spare);
-    });
-
     it('should sum score of two rolls and next roll, if all bowls striked down after 2 frame roll', () => {
       expect(BowlingGame().roll(4,6).roll(3,5).score()).to.be.equal(4 + 6 + 3 * 2 + 5);
     });
@@ -111,11 +80,6 @@ describe('BowlingGame', () => {
 
 
   describe('strike roll', () => {
-
-    it(`should switch frame status to ${FRAME_TYPES.strike}`, () => {
-      expect(BowlingGame().roll(BOWLS_IN_FRAME).frameInfo().status).to.be.equal(FRAME_TYPES.strike);
-    });
-
     it('should sum score of the roll and next 2 rolls if all bowls striked down after 1 frame roll', () => {
       expect(BowlingGame().roll(BOWLS_IN_FRAME).roll(3,5).score()).to.be.equal(10 + (3 + 5) * 2);
     });
@@ -133,10 +97,6 @@ describe('BowlingGame', () => {
 
 
   describe('last frame', () => {
-    it(`should contain flag isLast`, () => {
-      expect(customGame(FRAMES_IN_MATCH).frameInfo().isLast).to.be.true;
-    });
-
     it(`should simply sum all rolls`, () => {
       expect(customGame(FRAMES_IN_MATCH).roll(1,2).score()).to.be.equal(3);
       expect(customGame(FRAMES_IN_MATCH).roll(5,5,5).score()).to.be.equal(15);
