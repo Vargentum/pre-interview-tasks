@@ -12,7 +12,6 @@
 
 
 
-
 const BowlingGameConstants = {
   STRIKE_MAX_MULTIPLIER: 2,
   ROLLS_IN_FRAME: 2,
@@ -42,33 +41,21 @@ function BowlingGame () {
     total:   []
   }
 
-  const gameCalculator = (function() {
-    let {rolls, statuses, scores, total} = gameHistory
-       ,getScore = () => scores.reduce((p, n) => p += n, 0)
-       ,instance = null
-       ,createInstance = () => {
-         if (!instance) instance = {getScore}
-         return instance
-       }
-
-    return createInstance()
-  }())
-
   const gameLogger = (function() {
     let {rolls, statuses, scores, total} = gameHistory
        ,getMultiplierFrom = (index) => {
-          return statuses
-            .filter((item, idx, log) => index - idx <= STRIKE_MAX_MULTIPLIER)
-            .reduce((mlt, {status}) => {
+          let filtered = statuses.filter((item, idx, log) => {
+              return index - idx <= STRIKE_MAX_MULTIPLIER && index - idx > 0
+            })
+          return filtered.reduce((mlt, status, i, array) => {
               let {strike, spare, common, last} = FRAME_TYPES
               switch (status) {
-                case strike: mlt += 2
-                case spare:  mlt += 1
-                case common: mlt -= 1
-                case last:   mlt = 0
-                default:     mlt = 0
-                return mlt
+                case strike: mlt += 2; break
+                case spare:  mlt++; break
+                case common: mlt > 0 ? mlt-- : 0; break
+                case last:   mlt = 0; break
               }
+              return mlt
             }, 0)
           }
        ,{strike, spare, common, last} = FRAME_TYPES
@@ -96,24 +83,27 @@ function BowlingGame () {
           return status
         }
        ,logScore = rls => {
-          rolls.reduce((total, rls, idx) => {
-            let multiplier = getMultiplierFrom(idx)
-            return total += rls.reduce((rollTotal, roll) => {
-              if (multiplier) {
-                return rollTotal += roll * 2
-                multiplier--
+          let score = rolls.reduce((totalScore, rls, idx) => {
+            let mlt = getMultiplierFrom(idx)
+            return totalScore += rls.reduce((totalRoll, roll) => {
+              if (mlt) {
+                totalRoll += roll * 2
+                mlt--
               }
               else {
-                return rollTotal += roll
+                totalRoll += roll
               }
+              return totalRoll
             }, 0)
           }, 0)
+          scores.push(score)
+          return score
         }
        ,log = rls => {
           total.push({
             rolls: logRolls(rls),
+            status: logStatus(rls),
             score: logScore(rls),
-            status: logStatus(rls)
           })
         }
        ,reset = () => {
@@ -191,7 +181,7 @@ function BowlingGame () {
       return this
     },
     score() {
-      return gameCalculator.getScore()
+      return gameHistory.scores[gameHistory.scores.length - 1] || 0
     }
   }
 
