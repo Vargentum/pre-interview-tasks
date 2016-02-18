@@ -3,7 +3,7 @@ const {ROLLS_IN_FRAME, BOWLS_IN_FRAME, FRAMES_IN_MATCH, FRAME_TYPES} = BowlingGa
 
 let customGame = (level, x = 0, y = 0) => {
   let game = BowlingGame()
-  for (let i = 0; i < level; i++) {
+  for (let i = 0; i < level - 1; i++) {
     game.roll(x, y)
   };
   return game
@@ -11,7 +11,7 @@ let customGame = (level, x = 0, y = 0) => {
 
 let customStrikeGame = level => {
   let game = BowlingGame()
-  for (let i = 0; i < level; i++) {
+  for (let i = 0; i < level - 1; i++) {
     game.roll(BOWLS_IN_FRAME)
   };
   return game
@@ -63,12 +63,11 @@ describe('BowlingGame', () => {
       expect(BowlingGame().roll(4,5).score()).to.be.equal(4 + 5);
       expect(BowlingGame().roll(1,2).roll(3,4).score()).to.be.equal(1 + 2 + 3 + 4);
     });
-
   })
 
 
   describe('spare roll', () => {
-    it('should sum score of two rolls and next roll, if all bowls striked down after 2 frame roll', () => {
+    it('should sum score of two rolls and next roll', () => {
       expect(BowlingGame().roll(4,6).roll(3,5).score()).to.be.equal(4 + 6 + 3 * 2 + 5);
     });
 
@@ -80,7 +79,7 @@ describe('BowlingGame', () => {
 
 
   describe('strike roll', () => {
-    it('should sum score of the roll and next 2 rolls if all bowls striked down after 1 frame roll', () => {
+    it('should sum score of the roll and next 2 rolls', () => {
       expect(BowlingGame().roll(BOWLS_IN_FRAME).roll(3,5).score()).to.be.equal(10 + (3 + 5) * 2);
     });
 
@@ -105,7 +104,11 @@ describe('BowlingGame', () => {
 
     it(`should ignore spare or strike multipliers`, () => {
       expect(customGame(FRAMES_IN_MATCH - 1).roll(5,5).roll(1,2).score()).to.be.equal(13);
+    })
+    it(`should ignore spare or strike multipliers`, () => {
       expect(customGame(FRAMES_IN_MATCH - 1).roll(5,5).roll(5,5,5).score()).to.be.equal(25);
+    })
+    it(`should ignore spare or strike multipliers`, () => {
       expect(customGame(FRAMES_IN_MATCH - 1).roll(10).roll(10,10,10).score()).to.be.equal(40);
     })
   })
